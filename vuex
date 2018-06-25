@@ -1,0 +1,274 @@
+0.每一个 Vuex 应用的核心就是 store（仓库）。“store”基本上就是一个容器，它包含着你的应用中大部分的状态 (state)。Vuex 和单纯的全局对象有以下两点不同：
+1.Vuex 的状态存储是响应式的。当 Vue 组件从 store 中读取状态的时候，若 store 中的状态发生变化，那么相应的组件也会相应地得到高效更新。
+2.你不能直接改变 store 中的状态。改变 store 中的状态的唯一途径就是显式地提交 (commit) mutation。这样使得我们可以方便地跟踪每一个状态的变化，从而让我们能够实现一些工具帮助我们更好地了解我们的应用。
+
+//---------------------------------state
+import {mapState} from 'vuex'
+1.
+computed: mapState({
+        count: state => state.count,
+        age: 'age', //state => state.age
+        localNum(state){
+            return state.num + this.num;
+        }
+    }),
+2.
+computed: mapState([
+        'count',
+        'age'
+    ]),
+3.computed: {
+    ...mapState(['age', 'count']),
+    func(){
+        //...
+    }
+}
+//---------------------------------getter
+Vuex 允许我们在 store 中定义“getter”（可以认为是 store 的计算属性）。就像计算属性一样，getter 的返回值会根据它的依赖被缓存起来，且只有当它的依赖值发生了改变才会被重新计算。
+let store = new Vuex.store({
+        state: {
+                age: 1,
+                count: 2,
+                persons: [
+                        {name: 1, age: 2},
+                        {name: 2, age: 3}
+                ]
+        },
+        getters: {
+                getAgeGT1(state){
+                        return persons.filter(person => person.age > 1);
+                }
+        }
+});
+通过属性访问
+Getter 会暴露为 store.getters 对象，你可以以属性的形式访问这些值：
+func(){
+        return this.$store.getters.getAgeGT1;
+}
+通过方法访问
+你也可以通过让 getter 返回一个函数，来实现给 getter 传参。在你对 store 里的数组进行查询时非常有用。
+getters: {
+  // ...
+  getTodoById: (state) => (id) => {
+    return state.todos.find(todo => todo.id === id)
+  }
+}
+store.getters.getTodoById(2) // -> { id: 2, text: '...', done: false }
+注意，getter 在通过方法访问时，每次都会去进行调用，而不会缓存结果。
+#mapGetters 辅助函数
+mapGetters 辅助函数仅仅是将 store 中的 getter 映射到局部计算属性：
+
+computed: {
+        ...mapGetters([//原名字
+                'count', 
+                'age'
+        ]),
+         ...mapGetters({//该名字
+                count1: 'count',
+                age2: 'age'
+         }),
+}
+
+
+
+//---------------------------------mutations
+更改 Vuex 的 store 中的状态的唯一方法是提交 mutation。Vuex 中的 mutation 非常类似于事件：每个 mutation 都有一个字符串的 事件类型 (type) 和 一个 回调函数 (handler)。这个回调函数就是我们实际进行状态更改的地方，并且它会接受 state 作为第一个参数：
+mutations: {
+        inrement(state){
+                state.age ++;
+        }
+}
+//不能直接调用mutations,只能通过出发事件函数来调用 store.commit('increment', payload),可以传入第二个参数给mutations
+一般风格提交方式
+store.commit('increment', {
+        count: '1'
+})
+对象风格的提交方式
+提交 mutation 的另一种方式是直接使用包含 type 属性的对象：
+store.commit({
+  type: 'increment',
+  amount: 10
+})
+//-Mutation 需遵守 Vue 的响应规则
+1.既然 Vuex 的 store 中的状态是响应式的，那么当我们变更状态时，监视状态的 Vue 组件也会自动更新。这也意味着 Vuex 中的 mutation 也需要与使用 Vue 一样遵守一些注意事项：
+2.最好提前在你的 store 中初始化好所有所需属性。
+3.当需要在对象上添加新属性时，你应该使用 Vue.set(obj, 'newProp', 123), 或者以新对象替换老对象。例如，利用 stage-3 的对象展开运算符我们可以这样写：state.obj = { ...state.obj, newProp: 123 }
+4.mutations 必须是同步函数
+//-
+可以使用常亮来代替mutations的类型
+import {MUTATIONS_TYPE} from ('mutations_type.js')
+mutations: {
+        [MUTATIONS_TYPE](state){
+                //...
+        }
+}
+//-可以映射到子组件的methods里
+methods: {
+        ...mapMutations({
+               myage: 'age',
+        }),
+        ...mapMutations([
+                'age',
+                'count'
+        ])
+}
+
+
+
+//-----------------------------------------------------actions
+Actions
+Actions 类似于 mutation，不同在于：
+Actions 提交的是 mutation，而不是直接变更状态。
+Actions 可以包含任意异步操作。
+import {mapActions} from 'vuex'
+export default {
+        methods: {
+                ...mapActoins(['age','count']),
+                ...mapActions({
+                        myage: 'age',
+                        mycount: 'count'
+                }),
+        }
+}
+actoins: {
+        async incrmentA({commit, dispatch}, num){
+                return commit('add', {num});
+        },
+        async incrementB({dispatch, commit}, age){
+                return commit('add', await dispatch('increment', age));
+        }
+}
+
+
+
+//--------------------------------------------------------插件
+Vuex的plugins选项接受一个函数,这个选项暴露出mutations的钩子,是的使用者可以监听到每次mutatio的每次执行;
+const ageChangeMutationPlugin = (store) => {
+        store.subscribe((mutation, state) => {
+                //每次mutations执行之后就会触发这个函数,mutations结构为{type, payload}
+                if(mutations.type == 'ageChangeMutation'){
+                        //...
+                }
+        })
+}
+const store = new vux.store({
+        modules: {
+                a: moduleA,
+                b: moduleB
+        },
+        plugins:[ageChangeMutationPlugin]
+});
+
+
+
+//--------------------------------------------------------严格模式
+const store = new vuex.store({
+        strict: true,//会把没有通过mutations改变状态的操作揪取出来并报错, 生产环境下不建议使用,会耗费性能
+        strict: process.env.NODE_ENV !== 'production'
+})
+//严格模式下表单的处理
+<input v-model="message">//message是this.$store.state.mes,严格模式下不允许直接改变store中的值,所以必须另辟蹊径
+1.添加事件监听函数
+<input v-model="message" @change="updateMsg">
+methods: {
+        updateMsg(e){
+                this.$store.commit('updateMsg', e.target.value);
+        }
+}
+2.使用双向计算绑定属性
+computed: {
+        message: {
+                get: () => {this.$store.state.message},
+                set: (mes) => {this.$store.commit('updateMsg', mes)}
+        }
+}
+mutations: {
+        updateMsg(state, mes){
+                state.message = payload.mes;
+        }
+}
+
+
+//------------------------------------------------------小例子
+import Vue from 'vue'
+import Vuex from 'vuex'
+import axios from 'axios'
+
+Vue.use(Vuex)
+
+// let selectModule = {
+//   state:{
+//     title:'hello123',
+//     list: []
+//   },
+//   mutations:{
+//     changeTitle(state, payload){
+//       state.title = payload.title
+//     },
+//     changeList(state, list){
+//       state.list = list;
+//     }
+//   },
+//   actions:{
+//     getListAction({commit}){
+//       // 发送请求
+//       axios.get('http://easy-mock.com/mock/594f5d4b9adc231f3569be76/list/list')
+//         .then((data)=>{
+//           commit("changeList", data.data);  // 拿到数据后，提交mutations，改变状态
+//         })
+//         .catch((error)=>{
+//           conso.log(error)
+//         })
+//     }
+//   }
+// };
+
+// this.$store.state.title
+// this.$store.state.selectModule.title
+
+// 定义一个容器
+
+let store = new Vuex.Store({
+    state: { //初始化状态
+      count: 100,
+      sum:99,
+      isShow:true
+    },
+    getters: {//类似计算属性
+      filterCount(state){
+        return state.count >= 120 ? 120 : state.count;
+      },
+      sumGet(state){
+        return state.sum >= 200 ? 200 : state.sum
+      }
+    },
+    mutations: {//payload接受页面事件交互传过来的参数值
+      addIncrement(state, payload){
+         state.count += payload.n;
+       },
+      deIncrement(state, payload){
+        state.count -= payload.de;
+      },
+      sumFn(state, payload){
+        state.sum += payload.add;
+      }
+    },
+   actions: {
+      addAction({commit,dispatch}){
+        setTimeout(()=>{
+            // 改变状态，提交mutations
+            commit("addIncrement", {n:5})
+            dispatch("textAction", {test: '111'})
+        },1000)
+      },
+      textAction(context, obj){//接收上面dispatch提交过来的参数
+        console.log(this.state.isShow)//相当于一个异步操作里的回调函数
+      }
+  }
+  // ,
+  //   modules:{ //modules：多个store模块集合
+  //     selectModule
+  //   }
+})
+
+export default store
