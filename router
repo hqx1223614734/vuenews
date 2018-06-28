@@ -1,0 +1,21 @@
+前进
+<input type="button" value="前进" @click="router.go(1)">
+后退
+<input type="button" value="前进" @click="router.go(-1)">
+
+
+<router-link :to="{path:'/', params: {id: 1}, query: {id: 11}">
+const router = new VueRouter({
+  routes:[
+    {
+      path:'/',
+      redirect: function(hash, params, query){
+        if(hash.query.id === 121){
+          return {name: '/index'}
+        }
+      },
+      name: 'index',
+      component: index
+    }
+  ]
+});
