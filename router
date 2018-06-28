@@ -16,6 +16,21 @@ const router = new VueRouter({
       },
       name: 'index',
       component: index
+    },
+    {
+      path:'/add',
+      compoennt: add,
+      beforeEnter(to, from, next){//模板加载之前
+        if(from.params.id == 1){
+          next();
+        }
+      }
     }
   ]
+});
+Vue.component('myload', {
+  template:  `<div></div>`,
+  beforeRouteEnter(to, from, next){
+    
+  }
 });
