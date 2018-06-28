@@ -1,0 +1,49 @@
+//store
+const store = new Vuex.Store({
+  state: {
+    loadingState: false
+  },
+  mutations: {
+    changeLoadingState(state, s){
+      state.loadingState = s;
+    }
+  }
+});
+
+//app.vue
+imoprt {mapState, mapMutations} from 'vuex'
+
+export default {
+  template: "",
+  components: {
+    loading,
+  },
+  computed: {
+    ...mapState(['loadingState']),
+  },
+  methods: {
+    ...mapMutations(['changeloadingState'])
+  }
+}
+
+//route
+
+import store from '/store'
+import vue from 'vue'
+import vueRouter from 'vue-router'
+
+vue.use(vueRouter);
+const router = new vueRouter({
+  routes: [
+    {
+      //.../
+    }
+  ]
+});
+router.beforeEach((to, from, next) => {
+  store.commit('changeLoadingState', true);
+  next();
+});
+router.afterEach((to, from, next) => {
+  store.commit('changeLoadingState', false);
+});
